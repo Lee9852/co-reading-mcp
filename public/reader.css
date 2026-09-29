@@ -1685,3 +1685,20 @@ textarea::placeholder {
     font-size: 18px;
   }
 }
+
+
+/* Import feedback stays visible on the bookshelf, including on mobile. */
+.import-status {
+  margin: 10px 0 2px;
+  border: 1px solid rgba(242,167,207,.18);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(242,167,207,.08);
+  color: #e9c9da;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.import-status[hidden] {
+  display: none;
+}
