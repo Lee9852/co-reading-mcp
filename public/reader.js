@@ -491,12 +491,31 @@ function openCardPanel() {
   renderCardPanel();
 }
 
+function clearSelectionDraft() {
+  state.selectedQuote = "";
+  state.selectedQuoteOffset = null;
+  window.getSelection()?.removeAllRanges();
+  $("note-selection").disabled = true;
+  $("note-selection").textContent = "✎ 批注";
+}
+
 function updateSelectionAction() {
   const selection = window.getSelection();
   const details = selectionDetails(selection);
-  state.selectedQuote = details?.quote || "";
-  state.selectedQuoteOffset = details?.quoteOffset ?? null;
-  $("note-selection").disabled = !state.selectedQuote || !state.bookId || !state.chunkId;
+
+  // Mobile browsers often collapse the native selection the moment the user taps
+  // our annotation button. Keep the last valid passage until it is saved/cancelled
+  // or replaced by a new selection.
+  if (details?.quote) {
+    state.selectedQuote = details.quote;
+    state.selectedQuoteOffset = details.quoteOffset ?? null;
+  }
+
+  const hasQuote = Boolean(state.selectedQuote && state.bookId && state.chunkId);
+  $("note-selection").disabled = !hasQuote;
+  $("note-selection").textContent = hasQuote
+    ? `✎ 批注这段 · ${state.selectedQuote.length}字`
+    : "✎ 批注";
 }
 
 function elementForNode(node) {
@@ -642,6 +661,7 @@ async function deleteBookFromShelf(bookId) {
 
 async function selectChunk(chunkId) {
   state.chunkId = chunkId;
+  clearSelectionDraft();
   state.activeAnnotationId = null;
   state.replyTargetId = null;
   state.chunk = await api(`/api/books/${encodeURIComponent(state.bookId)}/chunks/${encodeURIComponent(chunkId)}`);
@@ -703,8 +723,20 @@ function activateAnnotation(noteId, { scroll = false } = {}) {
 
 function isEditingDraft() {
   const active = document.activeElement;
+  const selection = window.getSelection();
+  const range = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
+  const textEl = $("text");
+  const selectingText = Boolean(
+    range &&
+      !selection.isCollapsed &&
+      textEl &&
+      textEl.contains(range.commonAncestorContainer),
+  );
+
   return Boolean(
     state.composing ||
+      state.selectedQuote ||
+      selectingText ||
       active?.matches?.("textarea, input") ||
       active?.closest?.(".reply-form, .note-form"),
   );
@@ -767,6 +799,7 @@ document.addEventListener("selectionchange", updateSelectionAction);
 
 $("cancel-note").addEventListener("click", () => {
   $("note-form").hidden = true;
+  clearSelectionDraft();
 });
 
 $("note-form").addEventListener("submit", async (event) => {
@@ -785,8 +818,7 @@ $("note-form").addEventListener("submit", async (event) => {
     },
   });
   $("note-form").hidden = true;
-  window.getSelection()?.removeAllRanges();
-  updateSelectionAction();
+  clearSelectionDraft();
   await refreshCurrent({ force: true });
 });
 
