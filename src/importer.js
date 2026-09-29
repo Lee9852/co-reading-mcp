@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { resolveInside } from "./paths.js";
 import { dataDir } from "./store.js";
+import { scheduleCloudBackup } from "./cloud-sync.js";
 
 const execFileAsync = promisify(execFile);
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -199,6 +200,7 @@ async function runImport(filePath, options) {
 
   if (stderr.trim()) process.stderr.write(stderr);
   const manifest = await readImportedManifest(stdout);
+  scheduleCloudBackup(dataDir);
   const firstChunk = manifest.chunks?.[0] || null;
   const lastChunk = manifest.chunks?.[manifest.chunks.length - 1] || null;
   return {
