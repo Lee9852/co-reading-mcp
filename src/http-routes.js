@@ -315,8 +315,12 @@ export async function serveStatic(req, res, url) {
 
   try {
     const body = await readFile(resolved);
+    const ext = path.extname(resolved).toLowerCase();
     res.writeHead(200, {
-      "content-type": contentTypes[path.extname(resolved)] || "application/octet-stream",
+      "content-type": contentTypes[ext] || "application/octet-stream",
+      ...([".html", ".css", ".js"].includes(ext)
+        ? { "cache-control": "no-store, no-cache, must-revalidate" }
+        : {}),
     });
     res.end(body);
   } catch (error) {
