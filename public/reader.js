@@ -154,6 +154,13 @@ function scrollToPanel(selector) {
   });
 }
 
+function setImportStatus(message = "") {
+  const el = $("import-status");
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = !message;
+}
+
 function showToast(message) {
   clearTimeout(state.toastTimer);
   $("toast").textContent = message;
@@ -960,35 +967,53 @@ $("card-random").addEventListener("click", () => {
 });
 
 $("import-book").addEventListener("click", () => {
-  $("import-file").click();
+  const input = $("import-file");
+  input.value = "";
+  input.click();
 });
 
 $("import-file").addEventListener("change", async (event) => {
   const files = Array.from(event.target.files || []);
   if (!files.length) return;
+
   $("import-book").disabled = true;
+  setImportStatus(files.length === 1 ? `正在读取《${files[0].name}》…` : `正在读取 ${files.length} 本书…`);
+  showToast("正在导入，请稍等");
+
   try {
     const imported = [];
     for (const file of files) {
-      $("status").textContent = `正在导入 ${file.name}...`;
+      setImportStatus(`正在上传《${file.name}》…`);
+      const dataBase64 = await fileToBase64(file);
+      setImportStatus(`正在整理《${file.name}》…`);
       const manifest = await api("/api/import", {
         method: "POST",
         body: {
           filename: file.name,
-          dataBase64: await fileToBase64(file),
+          dataBase64,
           keepImages: $("import-keep-images").checked,
         },
       });
       imported.push(manifest);
     }
-    $("status").textContent = files.length === 1 ? `已导入 ${files[0].name}` : `已导入 ${files.length} 本书`;
+
     await loadBooks();
     renderBooks();
+    const message = files.length === 1 ? `《${files[0].name}》已加入书架` : `${files.length} 本书已加入书架`;
+    setImportStatus(message);
+    showToast(message);
+
     if (imported.length === 1 && imported[0]?.bookId) {
-      await selectBook(imported[0].bookId);
+      await openBookFromShelf(imported[0].bookId);
+    } else {
+      setMobileView("shelf");
     }
+
+    setTimeout(() => setImportStatus(""), 2600);
   } catch (error) {
-    showError(error);
+    const msg = error?.message || String(error);
+    setImportStatus(`导入失败：${msg}`);
+    showToast(`导入失败：${msg}`);
   } finally {
     $("import-book").disabled = false;
     event.target.value = "";
