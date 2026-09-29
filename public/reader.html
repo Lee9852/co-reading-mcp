@@ -6,13 +6,14 @@
     <title>共读 · S</title>
     <link rel="stylesheet" href="/reader.css" />
   </head>
-  <body>
+  <body class="view-shelf">
     <main class="app">
-      <section class="sidebar" aria-label="Library">
+      <section class="sidebar" id="shelf-view" aria-label="书架">
         <header class="topbar">
-          <div>
+          <div class="brand">
             <p class="eyebrow">CO-READING · S</p>
-            <h1>书架</h1>
+            <h1>共读</h1>
+            <p class="brand-line">和喜欢的故事，一起慢慢读。</p>
           </div>
           <div class="topbar-actions">
             <button id="import-book" class="icon-button" title="导入 EPUB / TXT / Markdown">＋</button>
@@ -20,37 +21,62 @@
           </div>
           <input id="import-file" type="file" accept=".epub,.txt,.text,.md,.markdown" multiple hidden />
         </header>
-        <label class="import-option" title="Copy pictures and formula images from EPUBs you import">
-          <input id="import-keep-images" type="checkbox" checked />
-          导入 EPUB 时保留图片
-        </label>
+
+        <section id="resume-card" class="resume-card" hidden>
+          <div class="resume-copy">
+            <p class="resume-kicker">继续阅读</p>
+            <h2 id="resume-title">还没有阅读记录</h2>
+            <p id="resume-meta" class="resume-meta"></p>
+            <span class="resume-progress"><span id="resume-progress"></span></span>
+          </div>
+          <button id="resume-open" class="resume-open" type="button">继续 ›</button>
+        </section>
+
+        <div class="shelf-heading">
+          <div>
+            <p class="eyebrow">LIBRARY</p>
+            <h2>我的书架</h2>
+          </div>
+          <label class="import-option" title="导入 EPUB 时保留书内图片">
+            <input id="import-keep-images" type="checkbox" checked />
+            保留图片
+          </label>
+        </div>
         <div id="books" class="books" aria-live="polite"></div>
       </section>
 
-      <section class="chapters" aria-label="Chapters">
+      <section class="chapters" id="chapters-view" aria-label="目录">
         <header class="panel-head">
-          <p id="book-meta" class="eyebrow">选择一本书</p>
-          <h2 id="book-title">共读书架</h2>
+          <button id="chapters-back" class="back-button" type="button" aria-label="返回书架">‹</button>
+          <div class="panel-copy">
+            <p id="book-meta" class="eyebrow">选择一本书</p>
+            <h2 id="book-title">目录</h2>
+          </div>
         </header>
         <div id="chunks" class="chunk-list"></div>
       </section>
 
-      <section class="reader" aria-label="Reader">
+      <section class="reader" id="reader-view" aria-label="阅读器">
         <header class="reader-head">
-          <div>
+          <button id="reader-back" class="back-button" type="button" aria-label="返回书架">‹</button>
+          <div class="reader-title-block">
             <p id="chunk-file" class="eyebrow">还没选章节</p>
             <h2 id="chunk-title">打开章节开始阅读</h2>
           </div>
           <div class="reader-actions">
             <button id="show-card" class="secondary-button" disabled>卡片</button>
             <button id="continue-reading" class="secondary-button" disabled>继续</button>
-            <button id="mark-read" class="secondary-button" disabled>读完这段</button>
+            <button id="mark-read" class="secondary-button accent-action" disabled>读完这段</button>
           </div>
         </header>
 
         <article id="text" class="text">
           <p class="empty">先选一本书和章节。长按选中文字，就能给 S 留批注。</p>
         </article>
+
+        <div class="chapter-end">
+          <button id="next-chapter" class="next-chapter" type="button" disabled>下一章 →</button>
+        </div>
 
         <aside id="margins" class="margins" aria-label="页边批注"></aside>
 
@@ -64,16 +90,14 @@
         </form>
 
         <footer class="submitbar">
+          <button id="note-selection" class="note-selection-button" disabled>✎ 批注</button>
           <span id="status">批注会先私下保存，发送后 S 才能看到。</span>
-          <div class="submit-actions">
-            <button id="note-selection" class="secondary-button" disabled>批注选中内容</button>
-            <button id="submit-notes" class="primary-button" disabled>Send to S</button>
-          </div>
+          <button id="submit-notes" class="s-button" disabled aria-label="发送批注给 S">S</button>
         </footer>
 
         <div id="toast" class="toast" hidden></div>
 
-        <aside id="card-panel" class="card-panel" hidden aria-label="Reading card">
+        <aside id="card-panel" class="card-panel" hidden aria-label="共读卡片">
           <div class="card-panel-head">
             <div>
               <p class="eyebrow">共读卡片</p>
@@ -88,6 +112,13 @@
         </aside>
       </section>
     </main>
+
+    <nav class="mobile-nav" aria-label="阅读导航">
+      <button id="nav-shelf" class="nav-item active" type="button"><span>▥</span>书架</button>
+      <button id="nav-chapters" class="nav-item" type="button"><span>☰</span>目录</button>
+      <button id="nav-notes" class="nav-item" type="button"><span>✎</span>批注</button>
+    </nav>
+
     <script type="module" src="/reader.js"></script>
   </body>
 </html>
