@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dataDir } from "./store.js";
 import { handle } from "./server.js";
 import { handleApi, readBody, sendError, sendJson, serveStatic } from "./http-routes.js";
+import { cloudSyncStatus, restoreCloudBackup } from "./cloud-sync.js";
 
 const port = Number(process.env.MCP_SSE_PORT || process.env.PORT || 3100);
 const host = process.env.MCP_SSE_HOST || "0.0.0.0";
@@ -244,6 +245,7 @@ async function route(req, res) {
       dataDir,
       sessions: sessions.size,
       auth: authToken ? "enabled" : "disabled",
+      cloudSync: cloudSyncStatus(),
       endpoints: {
         reader: "/",
         api: "/api/*",
@@ -270,13 +272,20 @@ export function startSseServer() {
     });
   });
 
-  server.listen(port, host, () => {
-    process.stderr.write(
-      `Co-Reading remote server: http://${host}:${port}\nReader: /\nREST API: /api/*\nMCP SSE: /sse\nMCP POST: /mcp\nData dir: ${dataDir}\nAuth: ${
-        authToken ? "enabled" : "disabled; set MCP_AUTH_TOKEN before exposing this server"
-      }\n`,
-    );
-  });
+  restoreCloudBackup(dataDir)
+    .catch((error) => {
+      process.stderr.write(`Cloud restore error: ${error.message || error}\n`);
+    })
+    .finally(() => {
+      server.listen(port, host, () => {
+        const cloud = cloudSyncStatus();
+        process.stderr.write(
+          `Co-Reading remote server: http://${host}:${port}\nReader: /\nREST API: /api/*\nMCP SSE: /sse\nMCP POST: /mcp\nData dir: ${dataDir}\nAuth: ${
+            authToken ? "enabled" : "disabled; set MCP_AUTH_TOKEN before exposing this server"
+          }\nCloud sync: ${cloud.enabled ? "JianGuoYun WebDAV enabled" : "disabled"}\n`,
+        );
+      });
+    });
 
   return server;
 }
