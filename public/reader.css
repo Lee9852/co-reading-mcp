@@ -1,15 +1,15 @@
 :root {
-  color-scheme: light dark;
-  --bg: #f7f4ef;
-  --panel: rgba(255, 255, 255, 0.72);
-  --panel-strong: rgba(255, 255, 255, 0.9);
-  --text: #1f1e1b;
-  --muted: #8a8883;
-  --line: rgba(45, 42, 36, 0.1);
-  --accent: #d9795c;
-  --accent-soft: rgba(217, 121, 92, 0.14);
-  --blue-soft: rgba(108, 142, 184, 0.16);
-  --shadow: 0 18px 60px rgba(36, 31, 24, 0.08);
+  color-scheme: dark;
+  --bg: #09080b;
+  --panel: rgba(31, 25, 31, 0.86);
+  --panel-strong: rgba(43, 33, 42, 0.96);
+  --text: #f8f2f7;
+  --muted: #aa9ca8;
+  --line: rgba(255, 205, 232, 0.11);
+  --accent: #f2a6cf;
+  --accent-soft: rgba(242, 166, 207, 0.17);
+  --blue-soft: rgba(176, 151, 255, 0.14);
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
 }
@@ -876,5 +876,189 @@ button:disabled {
   .quote-preview img {
     mix-blend-mode: lighten;
     filter: invert(1) hue-rotate(180deg) brightness(0.9);
+  }
+}
+
+
+/* Kelivo-inspired black + pink reading skin */
+body {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(242, 166, 207, 0.08), transparent 26rem),
+    var(--bg);
+}
+
+.sidebar,
+.chapters,
+.reader {
+  background: transparent;
+}
+
+.book,
+.chunk,
+.note-card {
+  border-color: rgba(255, 255, 255, 0.035);
+  background: linear-gradient(180deg, rgba(38, 30, 38, 0.9), rgba(25, 21, 26, 0.9));
+}
+
+.book:hover,
+.chunk:hover,
+.book.active,
+.chunk.active,
+.book-row.active .book {
+  border-color: rgba(242, 166, 207, 0.35);
+  background: rgba(51, 39, 50, 0.94);
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #f7b6d9, #eb91c2);
+  color: #241620;
+  box-shadow: 0 8px 24px rgba(242, 166, 207, 0.18);
+}
+
+.secondary-button,
+.icon-button {
+  background: rgba(255, 255, 255, 0.065);
+  color: #f5eaf2;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.text {
+  color: #f5edf3;
+}
+
+.text mark {
+  background: rgba(242, 166, 207, 0.24);
+  box-shadow: inset 0 -1px 0 rgba(255, 194, 228, 0.5);
+}
+
+.text mark.shared {
+  background: linear-gradient(90deg, rgba(242, 166, 207, 0.24), rgba(183, 156, 255, 0.22));
+}
+
+.note-form,
+.submitbar,
+.card-panel,
+.toast {
+  border-color: rgba(242, 166, 207, 0.13);
+  background: rgba(18, 15, 19, 0.9);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+}
+
+textarea {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+textarea::placeholder {
+  color: #8f818d;
+}
+
+@media (max-width: 980px) {
+  .sidebar,
+  .chapters,
+  .reader {
+    padding: 18px 16px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  h2 {
+    font-size: 22px;
+    line-height: 1.18;
+  }
+
+  .reader-head {
+    margin: 0 -4px 4px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .reader-head > div:first-child {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  #chunk-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-word;
+  }
+
+  .reader-actions {
+    gap: 6px;
+    justify-content: flex-start;
+  }
+
+  .reader-actions .secondary-button {
+    min-height: 34px;
+    padding: 0 11px;
+    font-size: 13px;
+  }
+
+  .text {
+    padding: 10px 2px 154px;
+    font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+    font-size: 20px;
+    line-height: 1.88;
+    letter-spacing: 0.015em;
+  }
+
+  .submitbar {
+    left: 12px;
+    right: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    gap: 8px;
+    padding: 10px;
+    border-radius: 20px;
+  }
+
+  .submitbar #status {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .submit-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .submit-actions button {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 14px;
+  }
+
+  .note-form {
+    left: 12px;
+    right: 12px;
+    bottom: calc(112px + env(safe-area-inset-bottom));
+    border-radius: 20px;
+  }
+
+  .book,
+  .chunk {
+    border-radius: 16px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+  }
+
+  body.has-book .books,
+  body.has-chunk .chunk-list {
+    max-height: 32vh;
+  }
+}
+
+/* Keep this skin dark even when the device is in light mode. */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: dark;
   }
 }
