@@ -166,7 +166,7 @@ function showToast(message) {
 function formatIdentity(author) {
   const value = String(author || "unknown").toLowerCase();
   if (value === "user" || value === "koshi") return "you";
-  if (value === "claude") return "Claude";
+  if (value === "claude") return "S";
   return value;
 }
 
@@ -348,10 +348,10 @@ function renderAnnotations() {
     .join("");
 
   $("submit-notes").disabled = openCount === 0;
-  $("submit-notes").textContent = openCount ? `Send ${openCount} to Claude` : "Send to Claude";
+  $("submit-notes").textContent = openCount ? `Send ${openCount} to S` : "Send to S";
   $("status").textContent = openCount
-    ? `${openCount} private note${openCount === 1 ? "" : "s"} waiting.`
-    : "Private notes stay local until you send them.";
+    ? `${openCount} 条批注还没发给 S。`
+    : "批注会先私下保存，发送后 S 才能看到。";
 }
 
 function currentBook() {
@@ -525,9 +525,9 @@ async function selectBook(bookId) {
   const book = state.books.find((item) => item.bookId === bookId);
   $("book-meta").textContent = book?.author || "Unknown author";
   $("book-title").textContent = book?.title || bookId;
-  $("chunk-file").textContent = "No chapter selected";
-  $("chunk-title").textContent = "Open a chapter to start reading";
-  $("text").innerHTML = `<p class="empty">Choose a chapter. Highlight text to leave a note for Claude.</p>`;
+  $("chunk-file").textContent = "还没选章节";
+  $("chunk-title").textContent = "打开章节开始阅读";
+  $("text").innerHTML = `<p class="empty">选一个章节开始读。长按选中文字，就能给 S 留批注。</p>`;
   $("mark-read").disabled = true;
   $("continue-reading").disabled = false;
   document.body.classList.add("has-book");
@@ -551,11 +551,11 @@ function clearBookSelection() {
   state.replyDrafts = {};
   state.replyTargetId = null;
   setLocationHash();
-  $("book-meta").textContent = "Choose a book";
-  $("book-title").textContent = "Reading shelf";
+  $("book-meta").textContent = "选择一本书";
+  $("book-title").textContent = "共读书架";
   $("chunk-file").textContent = "No chapter selected";
   $("chunk-title").textContent = "Open a chapter to start reading";
-  $("text").innerHTML = `<p class="empty">Select a book and chapter. Highlight text to leave a note for Claude.</p>`;
+  $("text").innerHTML = `<p class="empty">先选一本书和章节。长按选中文字，就能给 S 留批注。</p>`;
   $("mark-read").disabled = true;
   $("continue-reading").disabled = true;
   $("show-card").disabled = true;
