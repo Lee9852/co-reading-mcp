@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { buildCardCandidates, hashText, isClaudeAuthor, isHumanAuthor, pickCard } from "../public/card-logic.js";
 import { resolveInside } from "./paths.js";
+import { scheduleCloudBackup } from "./cloud-sync.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -68,10 +69,14 @@ async function acquireDataLock() {
 async function withWriteLock(operation) {
   const locked = async () => {
     await acquireDataLock();
+    let succeeded = false;
     try {
-      return await operation();
+      const result = await operation();
+      succeeded = true;
+      return result;
     } finally {
       await rm(lockDir, { recursive: true, force: true });
+      if (succeeded) scheduleCloudBackup(dataDir);
     }
   };
   const run = writeQueue.then(locked, locked);
