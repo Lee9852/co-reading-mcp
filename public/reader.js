@@ -231,22 +231,67 @@ function renderInlineNote(note, notes) {
   </aside>`;
 }
 
+function setMobileView(view) {
+  document.body.classList.remove("view-shelf", "view-chapters", "view-reader");
+  document.body.classList.add(`view-${view}`);
+  document.querySelectorAll(".mobile-nav .nav-item").forEach((button) => button.classList.remove("active"));
+  const active = view === "shelf" ? $("nav-shelf") : view === "chapters" ? $("nav-chapters") : $("nav-notes");
+  active?.classList.add("active");
+}
+
+function latestReadableBook() {
+  return state.books
+    .filter((book) => book.lastChunkId || book.lastReadAt)
+    .slice()
+    .sort((a, b) => String(b.lastReadAt || "").localeCompare(String(a.lastReadAt || "")))[0] || state.books[0] || null;
+}
+
+function renderResumeCard() {
+  const card = $("resume-card");
+  const book = latestReadableBook();
+  if (!card || !book) {
+    if (card) card.hidden = true;
+    return;
+  }
+  const total = book.chunkCount || 0;
+  const read = book.chunksRead || 0;
+  const pct = total ? Math.round((read / total) * 100) : 0;
+  card.hidden = false;
+  card.dataset.bookId = book.bookId;
+  $("resume-title").textContent = book.title || book.bookId;
+  $("resume-meta").textContent = `已读 ${read}/${total} · ${pct}%`;
+  $("resume-progress").style.width = `${pct}%`;
+}
+
+function coverTheme(index) {
+  return `cover-theme-${index % 6}`;
+}
+
 function renderBooks() {
   $("books").innerHTML = state.books
-    .map((book) => {
+    .map((book, index) => {
       const total = book.chunkCount || 0;
       const read = book.chunksRead || 0;
       const pct = total ? Math.round((read / total) * 100) : 0;
+      const title = escapeHtml(book.title || book.bookId);
       return `<div class="book-row ${book.bookId === state.bookId ? "active" : ""}">
         <button class="book" data-book="${escapeHtml(book.bookId)}">
-          <span class="book-title">${escapeHtml(book.title || book.bookId)}</span>
-          <span class="book-meta">${escapeHtml(book.author || "Unknown author")} · ${read}/${total} · ${book.annotationCount || 0} notes</span>
-          <span class="progress"><span style="width: ${pct}%"></span></span>
+          <span class="book-cover ${coverTheme(index)}">
+            <span class="book-cover-glow"></span>
+            <span class="book-cover-title">${title}</span>
+            <span class="book-cover-author">${escapeHtml(book.author || "共读")}</span>
+          </span>
+          <span class="book-info">
+            <span class="book-title">${title}</span>
+            <span class="book-meta">Part ${Math.min(read + 1, Math.max(total, 1))}/${total || "?"} · ${pct}%</span>
+            <span class="progress"><span style="width: ${pct}%"></span></span>
+          </span>
         </button>
-        <button class="book-delete" data-delete-book="${escapeHtml(book.bookId)}" title="Delete this book">Delete</button>
+        <button class="book-delete" data-delete-book="${escapeHtml(book.bookId)}" title="移出书架">×</button>
       </div>`;
     })
     .join("");
+  renderResumeCard();
 }
 
 function renderChunks() {
@@ -348,10 +393,12 @@ function renderAnnotations() {
     .join("");
 
   $("submit-notes").disabled = openCount === 0;
-  $("submit-notes").textContent = openCount ? `Send ${openCount} to S` : "Send to S";
+  $("submit-notes").textContent = "S";
+  $("submit-notes").dataset.count = openCount ? String(openCount) : "";
+  $("submit-notes").setAttribute("aria-label", openCount ? `发送 ${openCount} 条批注给 S` : "没有待发送批注");
   $("status").textContent = openCount
-    ? `${openCount} 条批注还没发给 S。`
-    : "批注会先私下保存，发送后 S 才能看到。";
+    ? `${openCount} 条批注待发送`
+    : "长按正文选中文字可做批注";
 }
 
 function currentBook() {
@@ -372,7 +419,7 @@ function refreshCards({ finish = null, show = false } = {}) {
   });
   if (state.cardIndex >= state.cardCandidates.length) state.cardIndex = 0;
   $("show-card").disabled = state.cardCandidates.length === 0;
-  $("show-card").textContent = state.cardCandidates.length ? `Cards ${state.cardCandidates.length}` : "Cards";
+  $("show-card").textContent = state.cardCandidates.length ? `卡片 ${state.cardCandidates.length}` : "卡片";
   if (show && state.cardCandidates.length) {
     openCardPanel();
   } else {
@@ -512,6 +559,7 @@ function selectionDetails(selection) {
 async function loadBooks() {
   state.books = await api("/api/books");
   renderBooks();
+  renderResumeCard();
 }
 
 async function selectBook(bookId) {
@@ -523,7 +571,7 @@ async function selectBook(bookId) {
   state.chunks = await api(`/api/books/${encodeURIComponent(bookId)}/chunks`);
   state.annotations = await api(`/api/annotations?bookId=${encodeURIComponent(bookId)}`);
   const book = state.books.find((item) => item.bookId === bookId);
-  $("book-meta").textContent = book?.author || "Unknown author";
+  $("book-meta").textContent = book?.author || "未知作者";
   $("book-title").textContent = book?.title || bookId;
   $("chunk-file").textContent = "还没选章节";
   $("chunk-title").textContent = "打开章节开始阅读";
@@ -537,7 +585,15 @@ async function selectBook(bookId) {
   renderBooks();
   renderChunks();
   renderAnnotations();
+  setMobileView("chapters");
   scrollToPanel(".chapters");
+}
+
+async function openBookFromShelf(bookId) {
+  await selectBook(bookId);
+  const next = await api(`/api/continue?bookId=${encodeURIComponent(bookId)}`);
+  const chunkId = next?.chunk?.chunk?.id || next?.chunk?.chunkId || next?.chunk?.id || state.chunks[0]?.id;
+  if (chunkId) await selectChunk(chunkId);
 }
 
 function clearBookSelection() {
@@ -553,13 +609,14 @@ function clearBookSelection() {
   setLocationHash();
   $("book-meta").textContent = "选择一本书";
   $("book-title").textContent = "共读书架";
-  $("chunk-file").textContent = "No chapter selected";
-  $("chunk-title").textContent = "Open a chapter to start reading";
+  $("chunk-file").textContent = "还没选章节";
+  $("chunk-title").textContent = "打开章节开始阅读";
   $("text").innerHTML = `<p class="empty">先选一本书和章节。长按选中文字，就能给 S 留批注。</p>`;
   $("mark-read").disabled = true;
   $("continue-reading").disabled = true;
   $("show-card").disabled = true;
   document.body.classList.remove("has-book", "has-chunk");
+  setMobileView("shelf");
   renderChunks();
   renderAnnotations();
 }
@@ -567,7 +624,7 @@ function clearBookSelection() {
 async function deleteBookFromShelf(bookId) {
   const book = state.books.find((item) => item.bookId === bookId);
   const label = book?.title || bookId;
-  if (!confirm(`Delete "${label}" from this library?\n\nThe files and related notes will be archived under data/trash.`)) return;
+  if (!confirm(`要把《${label}》移出书架吗？\n\n书籍和相关批注会先进入归档。`)) return;
 
   const result = await api(`/api/books/${encodeURIComponent(bookId)}`, { method: "DELETE" });
   $("status").textContent = result.message || `Deleted ${label}.`;
@@ -587,12 +644,15 @@ async function selectChunk(chunkId) {
   $("chunk-title").textContent = state.chunk.chunk.title;
   $("mark-read").disabled = false;
   $("continue-reading").disabled = false;
+  $("next-chapter").disabled = !state.chunk.nextId;
+  $("next-chapter").hidden = !state.chunk.nextId;
   document.body.classList.add("has-chunk");
   renderChunks();
   renderText();
   renderAnnotations();
   refreshCards();
   $("text").scrollTop = 0;
+  setMobileView("reader");
   scrollToPanel(".reader");
 }
 
@@ -675,7 +735,7 @@ $("books").addEventListener("click", (event) => {
     return;
   }
   const button = event.target.closest("[data-book]");
-  if (button) selectBook(button.dataset.book).catch(showError);
+  if (button) openBookFromShelf(button.dataset.book).catch(showError);
 });
 
 $("chunks").addEventListener("click", (event) => {
@@ -834,8 +894,8 @@ $("submit-notes").addEventListener("click", async () => {
   });
   await refreshCurrent({ force: true });
   $("status").textContent = result.submissionId
-    ? `Shared ${result.count} note${result.count === 1 ? "" : "s"} with Claude. Submission ${result.submissionId}.`
-    : result.message || "No private notes to share.";
+    ? `已发送 ${result.count} 条批注给 S。`
+    : result.message || "没有待发送的批注。";
 });
 
 $("mark-read").addEventListener("click", async () => {
@@ -860,6 +920,29 @@ $("continue-reading").addEventListener("click", async () => {
     return;
   }
   await selectChunk(chunkId);
+});
+
+$("next-chapter").addEventListener("click", () => {
+  if (!state.chunk?.nextId) return;
+  selectChunk(state.chunk.nextId).catch(showError);
+});
+
+$("resume-open").addEventListener("click", () => {
+  const bookId = $("resume-card")?.dataset.bookId;
+  if (bookId) openBookFromShelf(bookId).catch(showError);
+});
+
+$("chapters-back").addEventListener("click", () => setMobileView("shelf"));
+$("reader-back").addEventListener("click", () => setMobileView("shelf"));
+$("nav-shelf").addEventListener("click", () => setMobileView("shelf"));
+$("nav-chapters").addEventListener("click", () => {
+  if (!state.bookId) return setMobileView("shelf");
+  setMobileView("chapters");
+});
+$("nav-notes").addEventListener("click", () => {
+  if (!state.chunkId) return setMobileView(state.bookId ? "chapters" : "shelf");
+  setMobileView("reader");
+  requestAnimationFrame(() => $("margins")?.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
 
 $("refresh").addEventListener("click", () => refreshCurrent({ force: true }).catch(showError));
@@ -887,7 +970,7 @@ $("import-file").addEventListener("change", async (event) => {
   try {
     const imported = [];
     for (const file of files) {
-      $("status").textContent = `Importing ${file.name}...`;
+      $("status").textContent = `正在导入 ${file.name}...`;
       const manifest = await api("/api/import", {
         method: "POST",
         body: {
@@ -898,7 +981,7 @@ $("import-file").addEventListener("change", async (event) => {
       });
       imported.push(manifest);
     }
-    $("status").textContent = files.length === 1 ? `Imported ${files[0].name}.` : `Imported ${files.length} books.`;
+    $("status").textContent = files.length === 1 ? `已导入 ${files[0].name}` : `已导入 ${files.length} 本书`;
     await loadBooks();
     renderBooks();
     if (imported.length === 1 && imported[0]?.bookId) {
@@ -918,6 +1001,7 @@ function showError(error) {
   showToast(msg);
 }
 
+setMobileView(location.hash ? "reader" : "shelf");
 loadBooks()
   .then(restoreFromHash)
   .catch(showError);
