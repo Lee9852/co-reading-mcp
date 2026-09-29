@@ -21,6 +21,7 @@
           </div>
           <input id="import-file" type="file" accept=".epub,.txt,.text,.md,.markdown" multiple hidden />
         </header>
+        <div id="import-status" class="import-status" hidden></div>
 
         <section id="resume-card" class="resume-card" hidden>
           <div class="resume-copy">
@@ -95,8 +96,6 @@
           <button id="submit-notes" class="s-button" disabled aria-label="发送批注给 S">S</button>
         </footer>
 
-        <div id="toast" class="toast" hidden></div>
-
         <aside id="card-panel" class="card-panel" hidden aria-label="共读卡片">
           <div class="card-panel-head">
             <div>
@@ -112,6 +111,7 @@
         </aside>
       </section>
     </main>
+    <div id="toast" class="toast" hidden></div>
 
     <nav class="mobile-nav" aria-label="阅读导航">
       <button id="nav-shelf" class="nav-item active" type="button"><span>▥</span>书架</button>
