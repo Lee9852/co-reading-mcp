@@ -247,6 +247,20 @@ def sections_from_heading_regex(
     return sections
 
 
+def read_text_flexible(path: Path) -> str:
+    data = path.read_bytes()
+    if data.startswith(b"\xff\xfe") or data.startswith(b"\xfe\xff"):
+        return data.decode("utf-16")
+    if data.startswith(b"\xef\xbb\xbf"):
+        return data.decode("utf-8-sig")
+    for encoding in ("utf-8", "gb18030"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            pass
+    return data.decode("utf-8", errors="replace")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path)
@@ -270,7 +284,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    text = args.input.read_text(encoding="utf-8")
+    text = read_text_flexible(args.input)
     if args.heading_regex:
         sections = sections_from_heading_regex(text, args.heading_regex, args.min_section_chars)
         if sections:
